@@ -22,7 +22,7 @@ fn parse_num_option<N: std::str::FromStr>(opt: Option<OsString>, flag: &'static 
             return opt;
         }
     }
-    eprintln!("Invalid value for --entries");
+    eprintln!("Invalid value for {}", flag);
     exit(2);
 }
 
@@ -81,7 +81,6 @@ Environment variables:
         } else if &arg == "--print-stats" {
             print_stats = true;
         } else {
-
             if source.is_none() {
                 source = Some(arg);
             } else if target.is_none() {
