@@ -42,7 +42,7 @@ fn main() {
     let mut args = args_os();
     args.next();
     let usage = format!(
-        "
+        "\
 Usage: fast-local-sync [options] SOURCE DESTINATION
 Options:
     --threads NUM_THREADS
