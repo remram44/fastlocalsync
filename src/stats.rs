@@ -6,6 +6,7 @@ use std::time::Duration;
 pub struct Stats {
     scanned_entries: AtomicUsize,
     skipped_entries: AtomicUsize,
+    skipped_bytes: AtomicU64,
     queued_copy_entries: AtomicUsize,
     copied_entries: AtomicUsize,
     copied_bytes: AtomicU64,
@@ -19,6 +20,7 @@ impl Stats {
         Arc::new(Stats {
             scanned_entries: AtomicUsize::new(0),
             skipped_entries: AtomicUsize::new(0),
+            skipped_bytes: AtomicU64::new(0),
             queued_copy_entries: AtomicUsize::new(0),
             copied_entries: AtomicUsize::new(0),
             copied_bytes: AtomicU64::new(0),
@@ -70,6 +72,14 @@ impl Stats {
                         # TYPE sync_skipped_entries counter\n\
                         sync_skipped_entries {}\n",
                         stats.skipped_entries.load(Ordering::Relaxed),
+                    ).unwrap();
+
+                    write!(
+                        &mut buffer,
+                        "# HELP sync_skipped_bytes Total size of files skipped because they were up-to-date.\n\
+                        # TYPE sync_skipped_bytes counter\n\
+                        sync_skipped_bytes {}\n",
+                        stats.skipped_bytes.load(Ordering::Relaxed),
                     ).unwrap();
 
                     write!(
@@ -161,8 +171,11 @@ impl Stats {
         self.scanned_entries.fetch_add(count, Ordering::Relaxed);
     }
 
-    pub fn add_skipped_entries(&self, count: usize) {
+    pub fn add_skipped(&self, count: usize, bytes: u64) {
         self.skipped_entries.fetch_add(count, Ordering::Relaxed);
+        if bytes != 0 {
+            self.skipped_bytes.fetch_add(bytes, Ordering::Relaxed);
+        }
     }
 
     pub fn add_queued_copy_entries(&self, count: usize) {

@@ -231,7 +231,7 @@ fn dir_scan_thread(
                             if let Err(e) = copy_extended_metadata(&source_path, &target_path, source_metadata.is_dir()) {
                                 error!("Error copying extended metadata: {}", e);
                             }
-                            pool.stats.add_skipped_entries(1);
+                            pool.stats.add_skipped(1, source_metadata.len());
                         }
                     }
                 }
