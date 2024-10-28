@@ -28,7 +28,7 @@ fn parse_num_option<N: std::str::FromStr>(opt: Option<OsString>, flag: &'static 
 
 fn main() {
     // Initialize logging
-    pretty_env_logger::init();
+    pretty_env_logger::init_timed();
 
     // Parse command line
     let mut source = None;
