@@ -84,8 +84,8 @@ impl Stats {
 
                     write!(
                         &mut buffer,
-                        "# HELP sync_queued_copy_entries Total number of entries added to the queue for copy.\n\
-                        # TYPE sync_queued_copy_entries counter\n\
+                        "# HELP sync_queued_copy_entries Number of entries currently in the queue for copy.\n\
+                        # TYPE sync_queued_copy_entries gauge\n\
                         sync_queued_copy_entries {}\n",
                         stats.queued_copy_entries.load(Ordering::Relaxed),
                     ).unwrap();
@@ -180,6 +180,10 @@ impl Stats {
 
     pub fn add_queued_copy_entries(&self, count: usize) {
         self.queued_copy_entries.fetch_add(count, Ordering::Relaxed);
+    }
+
+    pub fn sub_queued_copy_entries(&self, count: usize) {
+        self.queued_copy_entries.fetch_sub(count, Ordering::Relaxed);
     }
 
     pub fn add_copied(&self, count: usize, bytes: u64) {

@@ -121,5 +121,6 @@ fn file_copy_thread(
         }
 
         pool.enqueued.fetch_sub(1, Ordering::Relaxed);
+        pool.stats.sub_queued_copy_entries(1);
     }
 }
