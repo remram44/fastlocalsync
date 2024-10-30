@@ -84,9 +84,9 @@ impl Stats {
 
                     write!(
                         &mut buffer,
-                        "# HELP sync_queued_copy_entries Number of entries currently in the queue for copy.\n\
-                        # TYPE sync_queued_copy_entries gauge\n\
-                        sync_queued_copy_entries {}\n",
+                        "# HELP sync_copy_entries_in_queue Number of entries currently in the queue for copy.\n\
+                        # TYPE sync_copy_entries_in_queue gauge\n\
+                        sync_copy_entries_in_queue {}\n",
                         stats.queued_copy_entries.load(Ordering::Relaxed),
                     ).unwrap();
 
