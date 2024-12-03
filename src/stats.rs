@@ -44,6 +44,7 @@ impl Stats {
         use tokio::runtime::Builder;
         use tracing::info;
         use warp::Filter;
+        use warp::http::Response;
 
         let stats = self.clone();
 
@@ -130,7 +131,9 @@ impl Stats {
                         stats.errors.load(Ordering::Relaxed),
                     ).unwrap();
 
-                    buffer
+                    Response::builder()
+                        .header("Content-type", "text/plain")
+                        .body(buffer)
                 });
                 warp::serve(routes).run(addr).await;
             });
