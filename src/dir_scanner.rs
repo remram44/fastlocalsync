@@ -227,10 +227,12 @@ fn dir_scan_thread(
                             // Copy non-directory entry (file, link, ...)
                             file_copier.add(entry_path.clone());
                         } else {
-                            // Copy extended metadata
-                            if let Err(e) = copy_extended_metadata(&source_path, &target_path, source_metadata.is_dir()) {
-                                error!("Error copying extended metadata: {}", e);
-                                pool.stats.add_errors(1);
+                            if !source_metadata.is_symlink() {
+                                // Copy extended metadata
+                                if let Err(e) = copy_extended_metadata(&source_path, &target_path, source_metadata.is_dir()) {
+                                    error!("Error copying extended metadata: {}", e);
+                                    pool.stats.add_errors(1);
+                                }
                             }
                             pool.stats.add_skipped(1, source_metadata.len());
                         }
