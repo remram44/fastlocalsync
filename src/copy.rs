@@ -68,7 +68,9 @@ fn copy_metadata(source: &Path, target: &Path) -> std::io::Result<()> {
     let mtime = FileTime::from_last_modification_time(&metadata);
     set_symlink_file_times(target, mtime, mtime)?;
 
-    copy_extended_metadata(source, target, metadata.is_dir())?;
+    if !metadata.is_symlink() {
+        copy_extended_metadata(source, target, metadata.is_dir())?;
+    }
 
     Ok(())
 }
