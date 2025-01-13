@@ -158,19 +158,19 @@ impl Stats {
 
             if i % 30 == 0 {
                 i = 0;
-                println!(
-                    "SCANNED     \
-                     SKIPPED     \
-                     QUEUED      \
-                     COPIED      \
-                     REMOVED     \
-                     DIR_LISTED  \
-                     ERRORS"
-                );
+                println!(concat!(
+                    "   SCANNED ",
+                    "   SKIPPED ",
+                    "    QUEUED ",
+                    "    COPIED ",
+                    "   REMOVED ",
+                    "DIR_LISTED ",
+                    "    ERRORS",
+                ));
             }
             i += 1;
             println!(
-                "{:>10}  {:>10}  {:>10}  {:>10}  {:>10}  {:>10}  {:>10}",
+                "{:>10} {:>10} {:>10} {:>10} {:>10} {:>10} {:>10}",
                 self.scanned_entries.load(Ordering::Relaxed),
                 self.skipped_entries.load(Ordering::Relaxed),
                 self.queued_copy_entries.load(Ordering::Relaxed),
