@@ -12,6 +12,7 @@ pub struct Stats {
     copied_bytes: AtomicU64,
     removed_entries: AtomicUsize,
     removed_bytes: AtomicU64,
+    listed_directories: AtomicUsize,
     errors: AtomicUsize,
 }
 
@@ -26,6 +27,7 @@ impl Stats {
             copied_bytes: AtomicU64::new(0),
             removed_entries: AtomicUsize::new(0),
             removed_bytes: AtomicU64::new(0),
+            listed_directories: AtomicUsize::new(0),
             errors: AtomicUsize::new(0),
         })
 
@@ -125,6 +127,14 @@ impl Stats {
 
                     write!(
                         &mut buffer,
+                        "# HELP listed_directories Total number of directories listed.\n\
+                        # TYPE listed_directories counter\n\
+                        listed_directories {}\n",
+                        stats.listed_directories.load(Ordering::Relaxed),
+                    ).unwrap();
+
+                    write!(
+                        &mut buffer,
                         "# HELP sync_errors Total number of errors during this sync operation.\n\
                         # TYPE sync_errors counter\n\
                         sync_errors {}\n",
@@ -154,17 +164,19 @@ impl Stats {
                      QUEUED      \
                      COPIED      \
                      REMOVED     \
+                     DIR_LISTED  \
                      ERRORS"
                 );
             }
             i += 1;
             println!(
-                "{:>10}  {:>10}  {:>10}  {:>10}  {:>10}  {:>10}",
+                "{:>10}  {:>10}  {:>10}  {:>10}  {:>10}  {:>10}  {:>10}",
                 self.scanned_entries.load(Ordering::Relaxed),
                 self.skipped_entries.load(Ordering::Relaxed),
                 self.queued_copy_entries.load(Ordering::Relaxed),
                 self.copied_entries.load(Ordering::Relaxed),
                 self.removed_entries.load(Ordering::Relaxed),
+                self.listed_directories.load(Ordering::Relaxed),
                 self.errors.load(Ordering::Relaxed),
             )
         }
@@ -201,6 +213,10 @@ impl Stats {
         if bytes != 0 {
             self.removed_bytes.fetch_add(bytes, Ordering::Relaxed);
         }
+    }
+
+    pub fn add_listed_directory(&self, count: usize) {
+        self.listed_directories.fetch_add(count, Ordering::Relaxed);
     }
 
     pub fn add_errors(&self, count: usize) {

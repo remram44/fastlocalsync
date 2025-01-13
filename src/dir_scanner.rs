@@ -307,6 +307,7 @@ fn dir_scan_thread(
 
         debug!("Scanning {:?}, check_target={}", path, check_target);
         dir_scan(path, check_target);
+        pool.stats.add_listed_directory(1);
 
         pool.enqueued.fetch_sub(1, Ordering::Relaxed);
     }
