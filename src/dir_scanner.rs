@@ -3,7 +3,6 @@ use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs::{Metadata, read_dir, remove_dir, remove_file, symlink_metadata};
 use std::io::ErrorKind;
-use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -101,14 +100,18 @@ fn metadata_equal(a: &Metadata, b: &Metadata) -> bool {
     if a.is_file() && a.len() != b.len() {
         return false;
     }
-    if a.mode() != b.mode() {
-        return false;
-    }
-    if a.uid() != b.uid() {
-        return false;
-    }
-    if a.gid() != b.gid() {
-        return false;
+    #[cfg(target_family = "unix")]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if a.mode() != b.mode() {
+            return false;
+        }
+        if a.uid() != b.uid() {
+            return false;
+        }
+        if a.gid() != b.gid() {
+            return false;
+        }
     }
     if a.modified().unwrap() != b.modified().unwrap() {
         return false;

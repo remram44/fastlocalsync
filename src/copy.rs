@@ -1,7 +1,6 @@
 use filetime::{FileTime, set_symlink_file_times};
-use std::fs::{copy, create_dir, read_link, remove_file, set_permissions, symlink_metadata};
+use std::fs::{Metadata, copy, create_dir, read_link, remove_file, set_permissions, symlink_metadata};
 use std::io::ErrorKind;
-use std::os::unix::fs::{MetadataExt, lchown, symlink};
 use std::path::Path;
 use tracing::debug;
 
@@ -61,7 +60,11 @@ fn copy_metadata(source: &Path, target: &Path) -> std::io::Result<()> {
     let metadata = symlink_metadata(source)?;
 
     // Copy attributes
-    lchown(target, Some(metadata.uid()), Some(metadata.gid()))?;
+    #[cfg(target_family = "unix")]
+    {
+        use std::os::unix::fs::{MetadataExt, lchown};
+        lchown(target, Some(metadata.uid()), Some(metadata.gid()))?;
+    }
     if !metadata.is_symlink() {
         set_permissions(target, metadata.permissions())?;
     }
@@ -88,12 +91,8 @@ pub fn copy_directory(source: &Path, target: &Path) -> std::io::Result<()> {
     copy_metadata(source, target)
 }
 
-pub fn copy_file(source: &Path, target: &Path) -> std::io::Result<u64> {
-    debug!("copy_file {:?} {:?}", source, target);
-
-    let source_metadata = symlink_metadata(source)?;
-
-    let size = if source_metadata.is_symlink() {
+fn copy_data(source: &Path, source_metadata: &Metadata, target: &Path) -> std::io::Result<u64> {
+    if source_metadata.is_symlink() {
         let link = read_link(source)?;
         debug!("copy_file symlink {:?} -> {:?}", link, target);
         match remove_file(target) {
@@ -101,17 +100,37 @@ pub fn copy_file(source: &Path, target: &Path) -> std::io::Result<u64> {
             Err(e) if e.kind() == ErrorKind::NotFound => {}
             Err(e) => return Err(e),
         }
-        symlink(link, target)?;
-        0
-    } else if source_metadata.is_file() {
+        #[cfg(target_family = "unix")]
+        {
+            std::os::unix::fs::symlink(link, target)?;
+        }
+        #[cfg(not(target_family = "unix"))]
+        {
+            return Err(std::io::Error::new(
+                ErrorKind::Other,
+                "Creating symlinks is not supported on this platform",
+            ));
+        }
+        return Ok(0);
+    }
+
+    if source_metadata.is_file() {
         debug!("copy_file regular file {:?} -> {:?}", source, target);
-        copy(source, target)?
-    } else {
-        return Err(std::io::Error::new(
-            ErrorKind::Other,
-            format!("Don't know how to copy entry that's not a symlink or a file: {:?}", source),
-        ));
-    };
+        return copy(source, target);
+    }
+
+    Err(std::io::Error::new(
+        ErrorKind::Other,
+        format!("Don't know how to copy entry, type unsupported: {:?}", source),
+    ))
+}
+
+pub fn copy_file(source: &Path, target: &Path) -> std::io::Result<u64> {
+    debug!("copy_file {:?} {:?}", source, target);
+
+    let source_metadata = symlink_metadata(source)?;
+
+    let size = copy_data(source, &source_metadata, target)?;
 
     copy_metadata(source, target)?;
 
