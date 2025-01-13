@@ -119,13 +119,25 @@ fn copy_data(source: &Path, source_metadata: &Metadata, target: &Path) -> std::i
         return copy(source, target);
     }
 
+    #[cfg(target_family = "unix")]
+    {
+        use std::os::unix::fs::FileTypeExt;
+        use std::os::unix::net::UnixListener;
+
+        if source_metadata.file_type().is_socket() {
+            UnixListener::bind(target)?;
+            return Ok(0);
+        }
+    }
+
     #[cfg(feature = "unixdev")]
     {
         use nix::sys::stat::Mode;
+        use nix::unistd::mkfifo;
         use std::os::unix::fs::{FileTypeExt, PermissionsExt};
 
         if source_metadata.file_type().is_fifo() {
-            nix::unistd::mkfifo(
+            mkfifo(
                 target,
                 Mode::from_bits(
                     source_metadata.permissions().mode(),
@@ -135,13 +147,36 @@ fn copy_data(source: &Path, source_metadata: &Metadata, target: &Path) -> std::i
         }
     }
 
-    #[cfg(target_family = "unix")]
+    #[cfg(feature = "unixdev")]
     {
-        use std::os::unix::fs::FileTypeExt;
-        use std::os::unix::net::UnixListener;
+        use nix::sys::stat::{Mode, SFlag, mknod, lstat};
+        use std::os::unix::fs::PermissionsExt;
 
-        if source_metadata.file_type().is_socket() {
-            UnixListener::bind(target)?;
+        let file_stat = lstat(source)?;
+
+        // Block device
+        if file_stat.st_mode & SFlag::S_IFBLK.bits() != 0 {
+            mknod(
+                target,
+                SFlag::S_IFBLK,
+                Mode::from_bits(
+                    source_metadata.permissions().mode(),
+                ).unwrap(),
+                file_stat.st_dev,
+            )?;
+            return Ok(0);
+        }
+
+        // Character device
+        if file_stat.st_mode & SFlag::S_IFCHR.bits() != 0 {
+            mknod(
+                target,
+                SFlag::S_IFCHR,
+                Mode::from_bits(
+                    source_metadata.permissions().mode(),
+                ).unwrap(),
+                file_stat.st_dev,
+            )?;
             return Ok(0);
         }
     }
