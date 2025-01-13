@@ -119,6 +119,33 @@ fn copy_data(source: &Path, source_metadata: &Metadata, target: &Path) -> std::i
         return copy(source, target);
     }
 
+    #[cfg(feature = "fifo")]
+    {
+        use nix::sys::stat::Mode;
+        use std::os::unix::fs::{FileTypeExt, PermissionsExt};
+
+        if source_metadata.file_type().is_fifo() {
+            nix::unistd::mkfifo(
+                target,
+                Mode::from_bits(
+                    source_metadata.permissions().mode(),
+                ).unwrap(),
+            )?;
+            return Ok(0);
+        }
+    }
+
+    #[cfg(target_family = "unix")]
+    {
+        use std::os::unix::fs::FileTypeExt;
+        use std::os::unix::net::UnixListener;
+
+        if source_metadata.file_type().is_socket() {
+            UnixListener::bind(target)?;
+            return Ok(0);
+        }
+    }
+
     Err(std::io::Error::new(
         ErrorKind::Other,
         format!("Don't know how to copy entry, type unsupported: {:?}", source),
