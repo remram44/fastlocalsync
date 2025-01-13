@@ -10,10 +10,10 @@ keywords = ["sync", "copy", "filesystem", "rsync"]
 license = "MIT"
 
 [features]
-default = ["acl", "attr", "fifo", "metrics"]
+default = ["acl", "attr", "unixdev", "metrics"]
 acl = ["dep:exacl"]
 attr = ["dep:xattr"]
-fifo = ["dep:nix"]
+unixdev = ["dep:nix"]
 metrics = ["dep:tokio", "dep:warp"]
 
 [dependencies]

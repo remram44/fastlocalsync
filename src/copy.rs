@@ -119,7 +119,7 @@ fn copy_data(source: &Path, source_metadata: &Metadata, target: &Path) -> std::i
         return copy(source, target);
     }
 
-    #[cfg(feature = "fifo")]
+    #[cfg(feature = "unixdev")]
     {
         use nix::sys::stat::Mode;
         use std::os::unix::fs::{FileTypeExt, PermissionsExt};
