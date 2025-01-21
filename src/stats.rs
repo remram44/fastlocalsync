@@ -127,9 +127,9 @@ impl Stats {
 
                     write!(
                         &mut buffer,
-                        "# HELP listed_directories Total number of directories listed.\n\
-                        # TYPE listed_directories counter\n\
-                        listed_directories {}\n",
+                        "# HELP sync_listed_directories Total number of directories listed.\n\
+                        # TYPE sync_listed_directories counter\n\
+                        sync_listed_directories {}\n",
                         stats.listed_directories.load(Ordering::Relaxed),
                     ).unwrap();
 
